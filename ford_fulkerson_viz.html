@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ford-Fulkerson Algorithm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .container {
+            flex: 1;
+            display: flex;
+            padding: 1.5rem;
+            gap: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .canvas-section {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            flex: 1;
+            display: block;
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            padding: 1.2rem;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 0.7rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        #playBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        #playBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        #nextBtn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        #nextBtn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        #resetBtn {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        #resetBtn:hover {
+            background: #ee5a52;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .info-panel {
+            width: 320px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        .info-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-section h3 {
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        .status {
+            background: #f8f9fa;
+            padding: 0.8rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #495057;
+        }
+        
+        .legend {
+            display: grid;
+            gap: 0.6rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #ddd;
+        }
+        
+        .max-flow {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Ford-Fulkerson Max Flow Algorithm</h1>
+        <p class="subtitle">Visualizing the maximum flow from source (S) to sink (T)</p>
+    </div>
+    
+    <div class="container">
+        <div class="canvas-section">
+            <canvas id="canvas"></canvas>
+            <div class="controls">
+                <button id="playBtn">▶ Play</button>
+                <button id="nextBtn">Next Step</button>
+                <button id="resetBtn">Reset</button>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-section">
+                <h3>Current Status</h3>
+                <div class="status" id="status">Click Play or Next to start</div>
+            </div>
+            
+            <div class="info-section">
+                <h3>Maximum Flow</h3>
+                <div class="max-flow" id="maxFlow">0</div>
+            </div>
+            
+            <div class="info-section">
+                <h3>Legend</h3>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4CAF50;"></div>
+                        <span>Source Node (S)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f44336;"></div>
+                        <span>Sink Node (T)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FFD700; border: 3px solid #FFA500;"></div>
+                        <span>Augmenting Path</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2196F3;"></div>
+                        <span>Flow/Capacity</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h3>About</h3>
+                <div class="status">
+                    The algorithm finds augmenting paths from source to sink using DFS, 
+                    then pushes the maximum possible flow through each path until no more 
+                    augmenting paths exist.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const playBtn = document.getElementById('playBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const statusDiv = document.getElementById('status');
+        const maxFlowDiv = document.getElementById('maxFlow');
+        
+        let isPlaying = false;
+        let currentStep = 0;
+        let steps = [];
+        let animationId = null;
+        
+        function resizeCanvas() {
+            const section = canvas.parentElement;
+            const rect = section.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height - 80;
+        }
+        
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            if (steps.length > 0) draw(steps[currentStep]);
+        });
+        
+        resizeCanvas();
+        
+        // Graph structure: [from, to, capacity]
+        const edges = [
+            [0, 1, 10], [0, 2, 10],
+            [1, 2, 2], [1, 3, 4], [1, 4, 8],
+            [2, 4, 9],
+            [3, 5, 10],
+            [4, 3, 6], [4, 5, 10]
+        ];
+        
+        const nodes = [
+            { id: 0, label: 'S', x: 0.15, y: 0.5 },
+            { id: 1, label: 'A', x: 0.35, y: 0.3 },
+            { id: 2, label: 'B', x: 0.35, y: 0.7 },
+            { id: 3, label: 'C', x: 0.65, y: 0.3 },
+            { id: 4, label: 'D', x: 0.65, y: 0.7 },
+            { id: 5, label: 'T', x: 0.85, y: 0.5 }
+        ];
+        
+        function fordFulkerson() {
+            const n = nodes.length;
+            const graph = Array(n).fill(0).map(() => Array(n).fill(0));
+            
+            edges.forEach(([from, to, cap]) => {
+                graph[from][to] = cap;
+            });
+            
+            const residual = graph.map(row => [...row]);
+            let maxFlow = 0;
+            steps = [{ residual: residual.map(r => [...r]), path: [], flow: 0, maxFlow: 0, message: 'Initial graph with capacities' }];
+            
+            while (true) {
+                const parent = Array(n).fill(-1);
+                const visited = Array(n).fill(false);
+                const queue = [0];
+                visited[0] = true;
+                
+                while (queue.length > 0 && !visited[n - 1]) {
+                    const u = queue.shift();
+                    for (let v = 0; v < n; v++) {
+                        if (!visited[v] && residual[u][v] > 0) {
+                            visited[v] = true;
+                            parent[v] = u;
+                            queue.push(v);
+                        }
+                    }
+                }
+                
+                if (!visited[n - 1]) break;
+                
+                const path = [];
+                let pathFlow = Infinity;
+                for (let v = n - 1; v !== 0; v = parent[v]) {
+                    const u = parent[v];
+                    path.unshift([u, v]);
+                    pathFlow = Math.min(pathFlow, residual[u][v]);
+                }
+                
+                steps.push({
+                    residual: residual.map(r => [...r]),
+                    path: [...path],
+                    flow: pathFlow,
+                    maxFlow: maxFlow,
+                    message: `Found augmenting path with flow ${pathFlow}`
+                });
+                
+                for (const [u, v] of path) {
+                    residual[u][v] -= pathFlow;
+                    residual[v][u] += pathFlow;
+                }
+                
+                maxFlow += pathFlow;
+                
+                steps.push({
+                    residual: residual.map(r => [...r]),
+                    path: [],
+                    flow: pathFlow,
+                    maxFlow: maxFlow,
+                    message: `Updated flow. Total max flow: ${maxFlow}`
+                });
+            }
+            
+            steps.push({
+                residual: residual.map(r => [...r]),
+                path: [],
+                flow: 0,
+                maxFlow: maxFlow,
+                message: `Algorithm complete! Maximum flow: ${maxFlow}`
+            });
+        }
+        
+        function draw(step) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            // Draw edges
+            edges.forEach(([from, to, capacity]) => {
+                const start = nodes[from];
+                const end = nodes[to];
+                const x1 = start.x * w;
+                const y1 = start.y * h;
+                const x2 = end.x * w;
+                const y2 = end.y * h;
+                
+                const isInPath = step.path.some(([u, v]) => u === from && v === to);
+                
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = isInPath ? '#FFA500' : '#2196F3';
+                ctx.lineWidth = isInPath ? 4 : 2;
+                ctx.stroke();
+                
+                // Arrow
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const arrowLen = 15;
+                ctx.beginPath();
+                ctx.moveTo(x2 - 35 * Math.cos(angle), y2 - 35 * Math.sin(angle));
+                ctx.lineTo(
+                    x2 - 35 * Math.cos(angle) - arrowLen * Math.cos(angle - Math.PI / 6),
+                    y2 - 35 * Math.sin(angle) - arrowLen * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.moveTo(x2 - 35 * Math.cos(angle), y2 - 35 * Math.sin(angle));
+                ctx.lineTo(
+                    x2 - 35 * Math.cos(angle) - arrowLen * Math.cos(angle + Math.PI / 6),
+                    y2 - 35 * Math.sin(angle) - arrowLen * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.stroke();
+                
+                // Flow/Capacity label
+                const flow = capacity - step.residual[from][to];
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                
+                ctx.fillStyle = 'white';
+                ctx.fillRect(midX - 25, midY - 12, 50, 24);
+                ctx.fillStyle = isInPath ? '#FF6B00' : '#333';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${flow}/${capacity}`, midX, midY);
+            });
+            
+            // Draw nodes
+            nodes.forEach((node, i) => {
+                const x = node.x * w;
+                const y = node.y * h;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 30, 0, 2 * Math.PI);
+                
+                if (i === 0) ctx.fillStyle = '#4CAF50';
+                else if (i === nodes.length - 1) ctx.fillStyle = '#f44336';
+                else ctx.fillStyle = '#2196F3';
+                
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.label, x, y);
+            });
+            
+            statusDiv.textContent = step.message;
+            maxFlowDiv.textContent = step.maxFlow;
+        }
+        
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                draw(steps[currentStep]);
+                
+                if (currentStep === steps.length - 1) {
+                    playBtn.textContent = '▶ Play';
+                    isPlaying = false;
+                    nextBtn.disabled = true;
+                }
+            }
+        }
+        
+        function play() {
+            if (isPlaying) {
+                isPlaying = false;
+                playBtn.textContent = '▶ Play';
+                if (animationId) clearTimeout(animationId);
+            } else {
+                if (currentStep === steps.length - 1) {
+                    reset();
+                }
+                isPlaying = true;
+                playBtn.textContent = '⏸ Pause';
+                nextBtn.disabled = true;
+                autoPlay();
+            }
+        }
+        
+        function autoPlay() {
+            if (!isPlaying || currentStep >= steps.length - 1) {
+                isPlaying = false;
+                playBtn.textContent = '▶ Play';
+                nextBtn.disabled = currentStep === steps.length - 1;
+                return;
+            }
+            
+            nextStep();
+            animationId = setTimeout(autoPlay, 1500);
+        }
+        
+        function reset() {
+            currentStep = 0;
+            isPlaying = false;
+            playBtn.textContent = '▶ Play';
+            nextBtn.disabled = false;
+            if (animationId) clearTimeout(animationId);
+            draw(steps[0]);
+        }
+        
+        playBtn.addEventListener('click', play);
+        nextBtn.addEventListener('click', nextStep);
+        resetBtn.addEventListener('click', reset);
+        
+        // Initialize
+        fordFulkerson();
+        draw(steps[0]);
+    </script>
+</body>
+</html>
